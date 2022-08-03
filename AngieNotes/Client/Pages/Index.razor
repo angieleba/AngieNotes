@@ -1,0 +1,39 @@
+﻿@using AngieNotes.Client.Pages.Notes
+@using AngieNotes.Client.Services
+@using MudBlazor
+@using AngieNotes.Shared;
+@inject NavigationManager NavigationManager;
+
+@page "/"
+@inject IClientNotesServices Service
+
+
+<MudContainer Class="mt-16 px-8" MaxWidth="MaxWidth.False" style="display:flex; justify-content:end">
+    <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="@(e=>Create())" Color="Color.Success">New note</MudButton>
+</MudContainer>
+
+<MudContainer Class="mt-2 px-8" MaxWidth="MaxWidth.False">
+    @foreach (Note node in Notes)
+{
+    <NoteDetails Note="node"></NoteDetails>
+}
+</MudContainer>
+
+
+@if(Notes.Count == 0){
+    <h6>No notes at the moment. Please create a new one!</h6>
+}
+
+@code {
+    List<Note> Notes = new List<Note>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Notes = await Service.GetAll();
+    }
+
+    void Create()
+    {
+        NavigationManager.NavigateTo("note");
+    }
+}

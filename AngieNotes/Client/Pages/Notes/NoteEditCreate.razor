@@ -1,0 +1,92 @@
+﻿@using AngieNotes.Client.Services
+@using AngieNotes.Shared
+@using AngieNotes.Client.Shared
+@using MudBlazor
+
+@page "/note"
+@page "/note/{id}"
+
+@inject NavigationManager NavigationManager;
+@inject IClientNotesServices NoteService;
+@inject ISnackbar Snackbar;
+
+<PageTitle>@pageTittle</PageTitle>
+<MudPaper Class="pa-4">
+    <MudForm Model="Note" @bind-IsValid="@success">
+        <MudTextField T="string" Label="Title" Required="true" @bind-Value="Note.Title" RequiredError="Title is required!" />
+        <MudTextField T="string" Label="Description" Required="true" @bind-Value="Note.Description" RequiredError="Description is required!" />
+        <MudSelect  @bind-Value="Note.Priority" >
+            <MudSelectItem Value="@(Priority.Low)">Low</MudSelectItem>
+            <MudSelectItem Value="@(Priority.Medium)">Medium</MudSelectItem>
+            <MudSelectItem Value="@(Priority.High)">High</MudSelectItem>
+        </MudSelect>
+        <div class="d-flex align-center justify-space-between">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" OnClick="OpenModal"  Class="ml-auto">@buttonLabel</MudButton>
+        </div>
+    </MudForm>
+</MudPaper>
+<Confirm @ref="ModificationConfirmation" ConfirmationMessage="@confirmationMessage" ConfirmationTitle="Confirm" ConfirmationChanged="Submit"></Confirm>
+
+@code {
+    bool success;
+    bool creation;
+
+    string pageTittle = "";
+    string buttonLabel = "";
+    string confirmationMessage = "";
+
+    Note Note = new Note();
+    protected Confirm ModificationConfirmation { get; set; }
+
+    [Parameter]
+    public string Id { get; set; }
+
+
+    async Task OpenModal()
+    {
+        this.ModificationConfirmation.Show();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(Id))
+        {
+            confirmationMessage = "Do you confirm modifying the note?";
+            pageTittle = "Modification of the note";
+            buttonLabel = "Modify";
+            Note = await NoteService.GetById(Id);
+        }
+        else
+        {
+            creation = true;
+            confirmationMessage = "Do you confirm creating the note?";
+            pageTittle = "Creation of new note";
+            buttonLabel = "Create";
+        }
+    }
+
+
+    async Task Submit(bool confirm)
+    {
+        bool res = false;
+        if (confirm)
+        {
+            if (string.IsNullOrEmpty(Id))
+            {
+                res = await this.NoteService.Create(Note);
+            }
+            else
+            {
+                res = await this.NoteService.Update(Note);
+            }
+
+            NavigationManager.NavigateTo("/");
+            string message = creation ? "creation" : "modification";
+            if (res)
+                Snackbar.Add($"The {message} of the note was successful!", Severity.Success);
+            else
+                Snackbar.Add($"Something went wrong during the {message} of the note.", Severity.Error);
+
+        }
+    }
+}

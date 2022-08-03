@@ -1,0 +1,72 @@
+﻿@using AngieNotes.Client.Services
+@using MudBlazor
+@using AngieNotes.Shared
+
+@inject NavigationManager NavigationManager;
+@inject IClientNotesServices NotesService;
+@inject ISnackbar Snackbar;
+
+<MudCard>
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">@Note.Title</MudText>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            <MudIconButton Icon="@Icons.Material.Filled.Bookmark" Color="@GetStyle(Note.Priority)" Size="Size.Large" />
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudText>@Note.Description</MudText>
+    </MudCardContent>
+    <MudCardActions>
+        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(e=>Edit(@Note.Id))" Color="Color.Warning" />
+        <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="OpenModal" Color="Color.Error" />
+    </MudCardActions>
+</MudCard>
+<Confirm @ref="ModificationConfirmation" ConfirmationMessage="Are you sure you want to delete this note?" ConfirmationTitle="Confirm" ConfirmationChanged="Delete"></Confirm>
+
+@code {
+    [Parameter]
+    public Note Note { get; set; } 
+    protected Confirm ModificationConfirmation { get; set; }
+
+    void Edit(string id)
+    {
+        NavigationManager.NavigateTo($"note/{id}");
+    }
+
+    public async Task Delete(bool confirm)
+    {
+        var res = false;
+        if (confirm)
+        {
+            res = await NotesService.Delete(Note.Id);
+            StateHasChanged();
+            if (res)
+                Snackbar.Add($"The deletion of the note was successful!", Severity.Success);
+            else
+                Snackbar.Add($"Something went wrong with the deletion of the note.", Severity.Error);
+        }
+    }
+
+    
+    async Task OpenModal()
+    {
+        this.ModificationConfirmation.Show();
+    }
+
+    Color GetStyle(Priority priority)
+    {
+        switch (priority)
+        {
+            case Priority.Low:
+                return Color.Primary;
+            case Priority.Medium:
+                return Color.Warning;
+            case Priority.High:
+                return Color.Error;
+            default:
+                return Color.Default;
+        }
+    }
+}
